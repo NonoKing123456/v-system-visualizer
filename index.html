@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#183e35">
   <meta name="description" content="探索 Ted Greene V1–V14：四声部转位、准确八度间距与横向吉他指板。离线可用。">
   <title>V-System · 吉他和弦实验室</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=sampled-guitars-1">
   <script src="engine.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="guitar-audio.js?v=sampled-guitars-1" defer></script>
+  <script src="app.js?v=sampled-guitars-1" defer></script>
 </head>
 <body>
   <header class="masthead">
@@ -27,6 +28,7 @@
       <div class="divider"></div>
       <div class="section-kicker">02 / 寻找合适的位置</div>
       <label>最大按弦跨度<select id="span"><option value="3">3 品 · 紧凑</option><option value="4">4 品</option><option value="5" selected>5 品 · 标准</option><option value="7">7 品 · 宽展</option><option value="12">12 品</option><option value="24">不限（24 品）</option></select></label>
+      <div class="sound-control"><label>试听音色<select id="instrument"><option value="acoustic">木吉他</option><option value="electric">清音电吉他</option></select></label><p id="audio-status" role="status" aria-live="polite"></p></div>
       <label class="check"><input id="show-octaves" type="checkbox"> 显示高八度重复指型（+12 品）</label>
       <label class="check"><input id="open-strings" type="checkbox"> 包含低把位空弦指型</label>
       <p class="hint">空弦仅搭配 1–5 品的按弦；默认不含空弦。默认合并整体升高 12 品的重复位置，保留搜索范围内较低的把位。跨度不计空弦；实际手感需自行确认。</p>
@@ -43,7 +45,7 @@
       <div id="validation" class="validation" role="alert" hidden></div>
       <div id="cards" class="cards"></div>
       <section id="guide" class="guide"><div class="section-kicker">NOTES FOR YOUR PRACTICE</div><h3>先选声音，再找手感。</h3><div class="guide-columns"><p><b>01. 配置和弦</b>选择根音、四音和弦性质与任意四根弦。点击 V1–V14，四张卡片会同步更新。</p><p><b>02. 比较转位</b>音序始终按实际音高从低到高显示。用每张卡片的箭头切换位置，用试听比较声音。</p><p><b>03. 放宽搜索</b>没有指型时，尝试更换弦组或增加跨度。宽展 V 组并非在所有弦组上都能按出。</p></div></section>
-      <footer>独立学习工具 · 基于 Ted Greene / James Hober V-System 资料<br><a href="https://www.tedgreene.com/teaching/v_system.asp" target="_blank" rel="noreferrer">TedGreene.com 资料索引 ↗</a><span>本地运行 · 无账户 · 无数据上传</span></footer>
+      <footer>独立学习工具 · 基于 Ted Greene / James Hober V-System 资料<br><a href="https://www.tedgreene.com/teaching/v_system.asp" target="_blank" rel="noreferrer">TedGreene.com 资料索引 ↗</a><span>本地运行 · 无账户 · 无数据上传</span><br>吉他录音：University of Iowa / Karoryfer · 整理：<a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noreferrer">N. P. Brosowsky / tonejs-instruments</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a></footer>
     </section>
   </main>
 </body>

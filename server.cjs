@@ -7,6 +7,9 @@ const files = new Map([
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/engine.js', ['engine.js', 'text/javascript; charset=utf-8']],
+  ['/guitar-audio.js', ['guitar-audio.js', 'text/javascript; charset=utf-8']],
+  ['/assets/guitar-acoustic.js', ['assets/guitar-acoustic.js', 'text/javascript; charset=utf-8']],
+  ['/assets/guitar-electric.js', ['assets/guitar-electric.js', 'text/javascript; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']]
 ]);
 function createServer() {

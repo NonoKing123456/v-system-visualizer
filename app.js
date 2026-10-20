@@ -4,8 +4,8 @@ const $=id=>document.getElementById(id);
 const COLORS=['#b96141','#9c7a2b','#377e79','#83729b'];
 const TITLES=['原位','第一转位','第二转位','第三转位'];
 const DESCRIPTIONS=['密集排列','开放排列 · Drop 2','开放排列 · Drop 3','开放排列 · Drop 2 & 4','宽展排列','低音扩展八度','低音扩展八度','反向和弦音序','高音扩展八度','上下声部拉开','高音扩展八度','低音扩展八度','中间声部拉开','高音扩展八度'];
-const DEFAULTS={rootName:'C',qualityId:'maj7',group:2,strings:[5,4,3,2],maxSpan:5,allowOpen:false,showOctaves:false};
-let state={...DEFAULTS,strings:[...DEFAULTS.strings]}, positions=[0,0,0,0], results=[], audioContext, activeAudio=[];
+const DEFAULTS={rootName:'C',qualityId:'maj7',group:2,strings:[5,4,3,2],maxSpan:5,allowOpen:false,showOctaves:false,instrument:'acoustic'};
+let state={...DEFAULTS,strings:[...DEFAULTS.strings]}, positions=[0,0,0,0], results=[], audioContext, guitarPlayer, playRequest=0;
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function load(){
   try{
@@ -15,48 +15,33 @@ function load(){
     V.tonesFor(s.rootName,s.qualityId); V.voicePattern(s.group,0);
     V.findVoicings({...s,inversion:0});
     state={...DEFAULTS,...s};
+    if(!Object.hasOwn(GuitarAudio.PRESETS,state.instrument))state.instrument=DEFAULTS.instrument;
   }catch{/* Private browsing or old settings: defaults remain available. */}
 }
 function persist(){try{localStorage.setItem('v-system-settings',JSON.stringify(state));}catch{/* Storage is optional. */}}
 function syncControls(){
   $('root').value=state.rootName;$('quality').value=state.qualityId;
   $('span').value=state.maxSpan;$('show-octaves').checked=state.showOctaves;$('open-strings').checked=state.allowOpen;
+  $('instrument').value=state.instrument;
   document.querySelectorAll('[data-string]').forEach(b=>b.setAttribute('aria-pressed',state.strings.includes(Number(b.dataset.string))));
   document.querySelectorAll('[data-strings]').forEach(b=>b.classList.toggle('active',b.dataset.strings===state.strings.join(',')));
   document.querySelectorAll('[data-group]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.group)===state.group));
   $('string-count').textContent=`${state.strings.length} / 4`;
 }
-function stopAudio(){activeAudio.forEach(o=>{try{o.stop();}catch{}});activeAudio=[];}
-function pluckString(midi,duration=2.6){
-  const sampleRate=audioContext.sampleRate,frequency=440*2**((midi-69)/12);
-  const delayLength=Math.max(2,Math.round(sampleRate/frequency));
-  const sampleCount=Math.ceil(sampleRate*duration),buffer=audioContext.createBuffer(1,sampleCount,sampleRate);
-  const samples=buffer.getChannelData(0),string=new Float32Array(delayLength);
-  for(let i=0;i<delayLength;i++)string[i]=Math.random()*2-1;
-  let cursor=0;
-  for(let i=0;i<sampleCount;i++){
-    const next=(cursor+1)%delayLength;
-    samples[i]=string[cursor];
-    string[cursor]=.498*(string[cursor]+string[next]);
-    cursor=next;
-  }
-  return buffer;
-}
+function stopAudio(){playRequest++;guitarPlayer?.stop();$('audio-status').textContent='';}
 async function play(shape){
   stopAudio();
+  const request=playRequest,instrument=state.instrument;
   const Audio=window.AudioContext||window.webkitAudioContext;
-  if(!Audio){$('result-count').textContent='此浏览器不支持试听';return;}
+  if(!Audio){$('audio-status').textContent='此浏览器不支持试听';return;}
   try{
     audioContext ||= new Audio();await audioContext.resume();
-    const start=audioContext.currentTime+.03;
-    shape.notes.forEach((n,i)=>{
-      const source=audioContext.createBufferSource(),body=audioContext.createBiquadFilter(),gain=audioContext.createGain();
-      const t=start+i*.09;source.buffer=pluckString(n.midi);body.type='lowpass';body.frequency.value=5600;body.Q.value=.35;
-      gain.gain.setValueAtTime(.0001,t);gain.gain.linearRampToValueAtTime(.2,t+.006);gain.gain.exponentialRampToValueAtTime(.001,t+2.45);
-      source.connect(body);body.connect(gain);gain.connect(audioContext.destination);source.start(t);source.stop(t+2.6);
-      source.onended=()=>{source.disconnect();body.disconnect();gain.disconnect();activeAudio=activeAudio.filter(x=>x!==source);};activeAudio.push(source);
+    if(request!==playRequest)return;
+    guitarPlayer ||= new GuitarAudio.Player(audioContext);
+    await guitarPlayer.play(shape.notes,instrument,message=>{
+      if(request===playRequest)$('audio-status').textContent=message;
     });
-  }catch{$('result-count').textContent='试听暂不可用，请检查浏览器音频权限';}
+  }catch{if(request===playRequest)$('audio-status').textContent='音色加载失败，请再次点击试听，或检查浏览器音频权限';}
 }
 function fretboard(shape,inversion){
   const stopped=shape.notes.filter(n=>n.fret>0).map(n=>n.fret);
@@ -134,6 +119,7 @@ function init(){
   $('root').addEventListener('change',e=>update({rootName:e.target.value}));
   $('quality').addEventListener('change',e=>update({qualityId:e.target.value}));
   $('span').addEventListener('change',e=>update({maxSpan:Number(e.target.value)}));
+  $('instrument').addEventListener('change',e=>{stopAudio();state.instrument=e.target.value;persist();});
   $('show-octaves').addEventListener('change',e=>update({showOctaves:e.target.checked}));
   $('open-strings').addEventListener('change',e=>update({allowOpen:e.target.checked}));
   $('strings').addEventListener('click',e=>{
