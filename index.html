@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183e35">
+  <meta name="description" content="探索 Ted Greene V1–V14：四声部转位、准确八度间距与横向吉他指板。离线可用。">
+  <title>V-System · 吉他和弦实验室</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="engine.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark">V<span>14</span></span><div><strong>V–SYSTEM</strong><span>吉他和弦实验室</span></div></div>
+    <p>FOUR VOICES. FOURTEEN POSSIBILITIES.</p>
+    <a href="#guide">使用指南 <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="workspace">
+    <aside class="controls" aria-label="和弦与指型设置">
+      <div class="section-kicker">01 / 定义你的和弦</div>
+      <h1>把和声，<br>放上指板。</h1>
+      <p class="intro">从一个和弦出发，探索四个转位的声音与形状。</p>
+      <div class="field-row"><label>根音<select id="root" aria-label="根音"></select></label><label>四音和弦性质<select id="quality" aria-label="四音和弦性质"></select></label></div>
+      <fieldset class="string-field"><legend>选择四根弦 <span id="string-count">4 / 4</span></legend><div id="strings" class="string-picker"></div></fieldset>
+      <div class="presets" aria-label="常用弦组"><button data-strings="6,5,4,3">低四弦</button><button data-strings="5,4,3,2" class="active">中四弦</button><button data-strings="4,3,2,1">高四弦</button></div>
+      <div class="divider"></div>
+      <div class="section-kicker">02 / 寻找合适的位置</div>
+      <label>最大按弦跨度<select id="span"><option value="3">3 品 · 紧凑</option><option value="4">4 品</option><option value="5" selected>5 品 · 标准</option><option value="7">7 品 · 宽展</option><option value="12">12 品</option><option value="24">不限（24 品）</option></select></label>
+      <label class="check"><input id="show-octaves" type="checkbox"> 显示高八度重复指型（+12 品）</label>
+      <label class="check"><input id="open-strings" type="checkbox"> 包含低把位空弦指型</label>
+      <p class="hint">空弦仅搭配 1–5 品的按弦；默认不含空弦。默认合并整体升高 12 品的重复位置，保留搜索范围内较低的把位。跨度不计空弦；实际手感需自行确认。</p>
+      <button id="reset" class="reset">↺ 恢复默认设置</button>
+      <div class="tuning"><span>标准调弦 / STANDARD</span><strong>E A D G B E</strong><small>6 弦 → 1 弦</small></div>
+    </aside>
+    <section class="explorer" aria-label="V-System 转位与指型">
+      <div class="explorer-top"><div><div class="section-kicker">VOICING EXPLORER</div><h2 id="chord-title">Cmaj7 <span>/ V-2</span></h2></div><div id="chord-tones" class="tone-legend"></div></div>
+      <div class="group-heading"><span>声部排列 <small>VOICING GROUP</small></span><button id="show-theory" aria-expanded="false" aria-controls="theory">V-System 是什么？ ⓘ</button></div>
+      <div id="groups" class="group-picker" aria-label="选择 V1 至 V14"></div>
+      <div id="theory" class="theory" hidden><strong>V 表示 Voicing（声部配置）</strong><p>V1–V14 用四个实际音高之间的间距分类。B / T / A / S 分别是从低到高的低音、次低音、次高音、高音。Gap 是相邻声部之间可插入的和弦音数量，并非半音数。额外的八度是定义的一部分。</p><p>四个转位由不同和弦音担任最低音。六和弦与挂留和弦也按四个构成音循环；卡片同时标明具体低音。所有指型按实际音高核验，跨弦声部会单独标注。</p><a href="https://www.tedgreene.com/images/lessons/v_system/10_Method_2-The_Chord_Tone_Gap_Method.pdf" target="_blank" rel="noreferrer">阅读 James Hober 的原始说明 ↗</a></div>
+      <div class="group-summary"><span id="group-description"></span><span id="gap-info"></span></div>
+      <div class="result-heading"><h3>四个转位 <span>INVERSIONS</span></h3><span id="result-count" role="status" aria-live="polite"></span></div>
+      <div id="validation" class="validation" role="alert" hidden></div>
+      <div id="cards" class="cards"></div>
+      <section id="guide" class="guide"><div class="section-kicker">NOTES FOR YOUR PRACTICE</div><h3>先选声音，再找手感。</h3><div class="guide-columns"><p><b>01. 配置和弦</b>选择根音、四音和弦性质与任意四根弦。点击 V1–V14，四张卡片会同步更新。</p><p><b>02. 比较转位</b>音序始终按实际音高从低到高显示。用每张卡片的箭头切换位置，用试听比较声音。</p><p><b>03. 放宽搜索</b>没有指型时，尝试更换弦组或增加跨度。宽展 V 组并非在所有弦组上都能按出。</p></div></section>
+      <footer>独立学习工具 · 基于 Ted Greene / James Hober V-System 资料<br><a href="https://www.tedgreene.com/teaching/v_system.asp" target="_blank" rel="noreferrer">TedGreene.com 资料索引 ↗</a><span>本地运行 · 无账户 · 无数据上传</span></footer>
+    </section>
+  </main>
+</body>
+</html>
