@@ -27,6 +27,21 @@ function syncControls(){
   $('string-count').textContent=`${state.strings.length} / 4`;
 }
 function stopAudio(){activeAudio.forEach(o=>{try{o.stop();}catch{}});activeAudio=[];}
+function pluckString(midi,duration=2.6){
+  const sampleRate=audioContext.sampleRate,frequency=440*2**((midi-69)/12);
+  const delayLength=Math.max(2,Math.round(sampleRate/frequency));
+  const sampleCount=Math.ceil(sampleRate*duration),buffer=audioContext.createBuffer(1,sampleCount,sampleRate);
+  const samples=buffer.getChannelData(0),string=new Float32Array(delayLength);
+  for(let i=0;i<delayLength;i++)string[i]=Math.random()*2-1;
+  let cursor=0;
+  for(let i=0;i<sampleCount;i++){
+    const next=(cursor+1)%delayLength;
+    samples[i]=string[cursor];
+    string[cursor]=.498*(string[cursor]+string[next]);
+    cursor=next;
+  }
+  return buffer;
+}
 async function play(shape){
   stopAudio();
   const Audio=window.AudioContext||window.webkitAudioContext;
@@ -35,11 +50,11 @@ async function play(shape){
     audioContext ||= new Audio();await audioContext.resume();
     const start=audioContext.currentTime+.03;
     shape.notes.forEach((n,i)=>{
-      const osc=audioContext.createOscillator(), gain=audioContext.createGain();
-      const t=start+i*.09;osc.type='triangle';osc.frequency.value=440*2**((n.midi-69)/12);
-      gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.12,t+.012);gain.gain.exponentialRampToValueAtTime(.001,t+1.9);
-      osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+2);
-      osc.onended=()=>{osc.disconnect();gain.disconnect();activeAudio=activeAudio.filter(x=>x!==osc);};activeAudio.push(osc);
+      const source=audioContext.createBufferSource(),body=audioContext.createBiquadFilter(),gain=audioContext.createGain();
+      const t=start+i*.09;source.buffer=pluckString(n.midi);body.type='lowpass';body.frequency.value=5600;body.Q.value=.35;
+      gain.gain.setValueAtTime(.0001,t);gain.gain.linearRampToValueAtTime(.2,t+.006);gain.gain.exponentialRampToValueAtTime(.001,t+2.45);
+      source.connect(body);body.connect(gain);gain.connect(audioContext.destination);source.start(t);source.stop(t+2.6);
+      source.onended=()=>{source.disconnect();body.disconnect();gain.disconnect();activeAudio=activeAudio.filter(x=>x!==source);};activeAudio.push(source);
     });
   }catch{$('result-count').textContent='试听暂不可用，请检查浏览器音频权限';}
 }

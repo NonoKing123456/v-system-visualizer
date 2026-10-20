@@ -20,7 +20,7 @@ npm start
 
 1. 选择根音和四音和弦性质，支持大七、属七、小七、小大七、半减七、减七、增大七、增属七、属七降五、大六、小六、挂四属七、挂二属七，共 13 种。
 2. 用六个琴弦按钮恰好选中四根弦；支持不相邻弦，也可使用低四弦 / 中四弦 / 高四弦快捷按钮。选弦期间不足或多于四根会提示，选满后自动搜索。
-3. 选择 V1–V14，查看原位及三个转位。每张卡片独立切换位置，按跨度、把位从小到大排序。点击 ▶，用浏览器合成音由低到高试听。
+3. 选择 V1–V14，查看原位及三个转位。每张卡片独立切换位置，按跨度、把位从小到大排序。点击 ▶，用浏览器合成的拨弦吉他音色由低到高试听。
 4. 搜索范围固定为 0–24 品，可设置最大按弦跨度。默认不含空弦；勾选“包含低把位空弦指型”后，空弦只允许搭配 1–5 品的按弦，不会混入高把位指型。切换设置自动重新搜索；有效设置尽可能保存在当前浏览器。
 5. 当前条件无解时会明确提示，并在可行时提供其他弦组按钮。尝试放宽跨度或更换弦组。
 6. 默认隐藏同一指型整体升高 12 品的重复位置，保留较低的把位。勾选“显示高八度重复指型（+12 品）”可查看全部位置；不同形状、不同声部跨弦的指型仍分别保留。
@@ -68,7 +68,7 @@ V 指 Voicing，而非调内属和弦。以 James Hober 整理的 **Method 2 —
 - [James Hober：Method 2 — The Chord Tone Gap Method（PDF，第一页 gap 表）](https://www.tedgreene.com/images/lessons/v_system/10_Method_2-The_Chord_Tone_Gap_Method.pdf)
 - [Ted Greene：Voicing System(s) Rosetta Page（PDF）](https://www.tedgreene.com/images/lessons/v_system/Voicing_Systems_Rosetta_Page_1989-05-25.pdf)
 
-独立制作的学习工具，与 Ted Greene 官方网站无隶属关系。项目未复制原始谱例或图片；试听为合成音。
+独立制作的学习工具，与 Ted Greene 官方网站无隶属关系。项目未复制原始谱例或图片；试听使用 Karplus–Strong 拨弦弦振动算法在浏览器中实时合成吉他音色。
 
 ## 文件与验证
 
@@ -76,7 +76,7 @@ V 指 Voicing，而非调内属和弦。以 James Hober 整理的 **Method 2 —
 index.html          页面与设置
 styles.css          响应式布局与视觉样式
 engine.js           音名、V 组定义、音高与指型搜索（浏览器 / Node 共用）
-app.js              交互、横向 SVG 指板、试听、设置保存
+app.js              交互、横向 SVG 指板、拨弦吉他音色、设置保存
 server.cjs          无依赖本地 HTTP 服务
 start.cmd           Windows 双击启动
 tests/              计算与服务验证
