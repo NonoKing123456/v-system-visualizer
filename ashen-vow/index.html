@@ -16,5 +16,5 @@
 <div id="touch-ui"><div id="joy"><i id="joy-knob"></i></div><div class="touch-skills"><button id="touch-lock">锁定</button><button id="touch-heal">药</button><button id="touch-roll">闪</button><button id="touch-heavy">重</button><button id="touch-light">剑</button></div></div>
 <div id="fatal" hidden><h2>未能唤醒庭院</h2><p id="fatal-text"></p><button onclick="location.reload()">重新载入</button></div>
 <script>addEventListener('error',e=>{const p=document.getElementById('fatal');if(p){p.hidden=false;document.getElementById('fatal-text').textContent=e.message||'图形资源未能载入，请启用浏览器硬件加速后重试。'}});</script>
-<script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js"></script><script src="game.js"></script>
+<script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js?v=3"></script><script src="game.js?v=3"></script>
 </body></html>
