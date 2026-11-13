@@ -7,7 +7,7 @@
   <meta name="description" content="灰烬誓约：月下废墟中的第三人称动作游戏 Demo。握紧长剑，观察前摇，在最后的庭院挑战无冠守望者。">
   <title>灰烬誓约 · ASHEN VOW</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3L38 42L32 59L26 42Z' fill='%23c8a36e'/%3E%3Cpath d='M13 39H51' stroke='%23c8a36e' stroke-width='4'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <canvas id="game" tabindex="0" aria-label="灰烬誓约 3D 战斗场景"></canvas>
@@ -35,6 +35,6 @@
   <div id="touch-ui"><div id="joy"><i id="joy-knob"></i></div><div class="touch-skills"><button id="touch-lock">锁定</button><button id="touch-heal">药</button><button id="touch-guard">盾</button><button id="touch-roll">滚</button><button id="touch-heavy">重</button><button id="touch-light">轻</button></div></div>
   <div id="fatal" hidden><small>THE EMBER IS INTERRUPTED</small><h2>未能唤醒庭院</h2><p id="fatal-text"></p><button onclick="location.reload()">重新载入 →</button></div>
   <script>addEventListener('error',e=>{const p=document.getElementById('fatal');if(p){p.hidden=false;document.getElementById('fatal-text').textContent=e.message||'图形资源未能载入，请确认浏览器已开启硬件加速后重试。'}});</script>
-  <script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js?v=4"></script><script src="characters.js?v=4"></script><script src="world.js?v=4"></script><script src="polish.js?v=4"></script><script src="game.js?v=4"></script>
+  <script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js?v=5"></script><script src="characters.js?v=5"></script><script src="world.js?v=5"></script><script src="polish.js?v=5"></script><script src="game.js?v=5"></script>
 </body>
 </html>

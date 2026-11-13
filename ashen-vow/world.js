@@ -7,13 +7,30 @@ function create({THREE:T,scene,renderer,M}){
  const root=new T.Group(),staticRoot=new T.Group(),dynamic=new T.Group();root.name='The Sepulchre of the Last Vow';scene.add(root);root.add(staticRoot,dynamic);
  const obstacles=[],flames=[],fireLights=[],banners=[],textures=[],ownedMaterials=[];
  function material(color,metal=0,rough=.9){const m=new T.MeshStandardMaterial({color,metalness:metal,roughness:rough});m.color.convertSRGBToLinear();ownedMaterials.push(m);return m;}
- const stone=[material('#747b7b'),material('#676f70'),material('#7d817d'),material('#565f63'),material('#8a8981')];
+ const stone=[material('#69767c'),material('#626e75'),material('#748080'),material('#59666e'),material('#808581')];
  const dark=material('#343f45'),edge=material('#93958a'),mortar=material('#273138'),bronze=material('#8d7950',.65,.5),moss=material('#454c3d'),wood=material('#363d3b'),wax=material('#bab59c'),bone=material('#9a998a');
  const distant=material('#253540'),mountainA=material('#21313e'),mountainB=material('#1c2a36'),mountainC=material('#192732');
  const ember=new T.MeshBasicMaterial({color:'#ffad58'}),core=new T.MeshBasicMaterial({color:'#fff0bf'});ownedMaterials.push(ember,core);
  const stoneNoise=new Uint8Array(128*128*4);for(let y=0;y<128;y++)for(let x=0;x<128;x++){const k=(y*128+x)*4,grain=random()*52+(Math.sin(x*.25+y*.06)*Math.sin(y*.39)*12),v=112+grain;stoneNoise[k]=stoneNoise[k+1]=stoneNoise[k+2]=v;stoneNoise[k+3]=255;}
  const bump=new T.DataTexture(stoneNoise,128,128,T.RGBAFormat);bump.wrapS=bump.wrapT=T.RepeatWrapping;bump.magFilter=T.LinearFilter;bump.minFilter=T.LinearMipMapLinearFilter;bump.generateMipmaps=true;bump.needsUpdate=true;textures.push(bump);
  for(const m of stone.concat([dark,edge,bone])){m.bumpMap=bump;m.bumpScale=.027;}
+ // Multiscale albedo weathering survives the pulled-back gameplay camera. Five
+ // differently offset/rotated maps avoid the same stain repeating on every slab.
+ const hash=(x,y)=>{const v=Math.sin(x*127.1+y*311.7)*43758.5453123;return v-Math.floor(v);};
+ const valueNoise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);return lerp(lerp(hash(ix,iy),hash(ix+1,iy),u),lerp(hash(ix,iy+1),hash(ix+1,iy+1),u),v);};
+ const weatherPixels=new Uint8Array(256*256*4);
+ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+  const u=x/256,v=y/256,k=(y*256+x)*4;
+  const broad=valueNoise(u*4.8+11,v*4.8+37),mottle=valueNoise(u*19.2+24,v*19.2+3),fine=valueNoise(u*77.1+4,v*77.1+7),pit=hash(x,y);
+  const stain=Math.max(0,(.58-broad)*2.4),lichen=Math.max(0,(mottle-.60)*2.5)*Math.max(0,.65-broad);
+  const wear=Math.pow(Math.max(Math.abs(u-.5),Math.abs(v-.5))*2,15)*10;
+  const level=210+26*(mottle-.5)+19*(fine-.5)+wear-stain*68-(pit>.965?23:0);
+  weatherPixels[k]=Math.min(255,Math.max(0,level-lichen*10));weatherPixels[k+1]=Math.min(255,Math.max(0,level+lichen*12));weatherPixels[k+2]=Math.min(255,Math.max(0,level+3-lichen*17));weatherPixels[k+3]=255;
+ }
+ for(let i=0;i<stone.length;i++){
+  const map=new T.DataTexture(weatherPixels.slice(),256,256,T.RGBAFormat);map.encoding=T.sRGBEncoding;map.wrapS=map.wrapT=T.RepeatWrapping;map.magFilter=T.LinearFilter;map.minFilter=T.LinearMipMapLinearFilter;map.generateMipmaps=true;map.anisotropy=renderer&&renderer.capabilities?Math.min(4,renderer.capabilities.getMaxAnisotropy()):1;map.offset.set(i*.193,i*.317);map.center.set(.5,.5);map.rotation=i*1.32;map.needsUpdate=true;textures.push(map);stone[i].map=map;stone[i].bumpScale=.035;stone[i].roughness=.98;
+ }
+ mortar.color.set('#18272e').convertSRGBToLinear();
  function group(parent,x=0,y=0,z=0){const g=new T.Group();g.position.set(x,y,z);parent.add(g);return g;}
  function mesh(parent,g,m,x=0,y=0,z=0,cast=true){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=cast;o.receiveShadow=true;parent.add(o);return o;}
  function box(p,x,y,z,w,h,d,m=stone[0],cast=true){return mesh(p,new T.BoxGeometry(w,h,d),m,x,y,z,cast);}
@@ -31,7 +48,7 @@ function create({THREE:T,scene,renderer,M}){
  // Individually chipped flagstones: each slab has its own silhouette and bevel.
  cylinder(staticRoot,0,-.24,0,15.05,.58,dark,96,14.87);
  cylinder(staticRoot,0,.01,0,14.62,.10,mortar,96);
- const slabGeo=(w,d,h)=>{const inset=.035,pts=[[-w/2+random()*.05,-d/2+random()*.05],[w/2-random()*.05,-d/2+random()*.05],[w/2-random()*.05,d/2-random()*.05],[-w/2+random()*.05,d/2-random()*.05]];const s=new T.Shape();s.moveTo(...pts[0]);pts.slice(1).forEach(v=>s.lineTo(...v));s.closePath();const g=new T.ExtrudeGeometry(s,{depth:h,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:inset,bevelThickness:.018,curveSegments:1});g.rotateX(-PI/2);return g;};
+ const slabGeo=(w,d,h)=>{const inset=.012,pts=[[-w/2+random()*.018,-d/2+random()*.018],[w/2-random()*.018,-d/2+random()*.018],[w/2-random()*.018,d/2-random()*.018],[-w/2+random()*.018,d/2-random()*.018]];const s=new T.Shape();s.moveTo(...pts[0]);pts.slice(1).forEach(v=>s.lineTo(...v));s.closePath();const g=new T.ExtrudeGeometry(s,{depth:h,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:inset,bevelThickness:.008,curveSegments:1});g.rotateX(-PI/2);return g;};
  for(let row=-13;row<=13;row++)for(let col=-13;col<=13;col++){const x=col*1.07+(row%2)*.53,z=row*1.07;if(Math.hypot(x,z)>14.0)continue;const o=mesh(staticRoot,slabGeo(1.015,1.01,.065),stoneChoice(),x,.082+random()*.012,z);o.rotation.y=(random()-.5)*.012;}
  // A carved compass rose remains visible under the accumulated weathering.
  for(const r of [1.4,5.20,10.65,13.88]){const ring=torus(staticRoot,0,.164,0,r,r>13?.026:.013,bronze,128);ring.rotation.x=-PI/2;}
@@ -129,6 +146,18 @@ function create({THREE:T,scene,renderer,M}){
  const haloMat=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{color:{value:new T.Color('#99aebe')}},vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'varying vec3 n;varying vec3 v;uniform vec3 color;void main(){float a=pow(max(0.,dot(normalize(n),normalize(v))),2.5)*.095;gl_FragColor=vec4(color,a);}'});ownedMaterials.push(haloMat);mesh(dynamic,new T.SphereGeometry(4.8,24,16),haloMat,-19,28,-66,false);
  const ashGeo=new T.BufferGeometry(),ashArray=new Float32Array(160*3);for(let i=0;i<160;i++){ashArray[i*3]=(random()-.5)*44;ashArray[i*3+1]=random()*14;ashArray[i*3+2]=(random()-.5)*42;}ashGeo.setAttribute('position',new T.BufferAttribute(ashArray,3));const ashMat=new T.PointsMaterial({color:'#a8b4b3',size:.030,transparent:true,opacity:.31,depthWrite:false});dynamic.add(new T.Points(ashGeo,ashMat));ownedMaterials.push(ashMat);
  const starPos=[];for(let i=0;i<110;i++){const a=random()*TAU,polar=.12+random()*.66,r=100;starPos.push(Math.sin(a)*Math.cos(polar)*r,Math.sin(polar)*r,Math.cos(a)*Math.cos(polar)*r);}const stars=new T.BufferGeometry();stars.setAttribute('position',new T.Float32BufferAttribute(starPos,3));const starMat=new T.PointsMaterial({color:'#a5b6ca',size:.12,transparent:true,opacity:.26,fog:false,depthWrite:false});dynamic.add(new T.Points(stars,starMat));ownedMaterials.push(starMat);
+ // Low, soft-edged mist is restricted to the ruin's perimeter. Normal alpha
+ // blending gives depth without turning the combat floor into luminous smoke.
+ const mistUniforms={clock:{value:0}};
+ const mistMaterial=new T.ShaderMaterial({uniforms:mistUniforms,transparent:true,depthWrite:false,side:T.DoubleSide,
+  vertexShader:'varying vec2 uv0;varying vec3 world;void main(){uv0=uv;vec4 p=modelMatrix*vec4(position,1.);world=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}',
+  fragmentShader:`precision mediump float;uniform float clock;varying vec2 uv0;varying vec3 world;
+  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+  void main(){vec2 p=world.xz*.22+vec2(-clock*.045,clock*.014)+uv0*2.;float n=noise(p)*.67+noise(p*2.1+4.)*.33;
+   vec2 q=(uv0-.5)*2.;float edge=1.-smoothstep(.15,1.,dot(q,q));float drift=smoothstep(.23,.68,n);float vertical=1.-smoothstep(.24,.94,uv0.y);
+   float a=edge*drift*vertical*.14;gl_FragColor=vec4(vec3(.24,.31,.35),a);}`});ownedMaterials.push(mistMaterial);
+ for(let i=0;i<6;i++){const a=i/6*TAU+.22;const mist=mesh(dynamic,new T.PlaneGeometry(10.5,1.7,1,1),mistMaterial,Math.sin(a)*14.25,.95,Math.cos(a)*14.25,false);mist.rotation.y=a;mist.renderOrder=2;mist.name='Perimeter ground mist';}
 
  // One draw per material/shadow mode for all static masonry, foliage and terrain.
  staticRoot.updateMatrixWorld(true);const buckets=new Map(),old=[];staticRoot.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);const key=o.material.uuid+(o.castShadow?'1':'0');if(!buckets.has(key))buckets.set(key,{material:o.material,cast:o.castShadow,p:[],n:[],uv:[]});const b=buckets.get(key);b.p.push(g.attributes.position.array);b.n.push(g.attributes.normal.array);b.uv.push(g.attributes.uv?g.attributes.uv.array:new Float32Array(g.attributes.position.count*2));old.push(o);g.dispose();});
@@ -137,7 +166,7 @@ function create({THREE:T,scene,renderer,M}){
  for(const o of old){o.parent.remove(o);o.geometry.dispose();}root.remove(staticRoot);
  const stats={staticDraws:buckets.size,staticTriangles:0};root.traverse(o=>{if(o.isMesh&&!o.geometry.index)stats.staticTriangles+=o.geometry.attributes.position.count/3;});
  return {root,obstacles,flames,fireLights,campLight,veilMaterial,veil,ashGeo,ashArray,moon,stats,
-  update(dt,t){for(const b of banners){const p=b.mesh.geometry.attributes.position;for(let i=0;i<p.count;i++){const y=b.base[i*3+1],x=b.base[i*3];const u=(1.3-y)/2.6;p.setZ(i,Math.sin(t*1.6+x*2.4+y*1.8+b.phase)*.11*u+Math.sin(t*2.7+y*3.5)*.022*u);}p.needsUpdate=true;b.mesh.geometry.computeVertexNormals();}},
+  update(dt,t){mistUniforms.clock.value=t;for(const b of banners){const p=b.mesh.geometry.attributes.position;for(let i=0;i<p.count;i++){const y=b.base[i*3+1],x=b.base[i*3];const u=(1.3-y)/2.6;p.setZ(i,Math.sin(t*1.6+x*2.4+y*1.8+b.phase)*.11*u+Math.sin(t*2.7+y*3.5)*.022*u);}p.needsUpdate=true;b.mesh.geometry.computeVertexNormals();}},
   dispose(){const seen=new Set();root.traverse(o=>{if(o.geometry&&!seen.has(o.geometry)){seen.add(o.geometry);o.geometry.dispose();}});for(const m of ownedMaterials)m.dispose();for(const t of textures)t.dispose();scene.remove(root);}
  };
 }
