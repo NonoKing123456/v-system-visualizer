@@ -16,7 +16,7 @@ function boot(){
 }
 test('integrated art builds finite articulated meshes and batched architecture',()=>{
  const q=boot();assert.ok(q.world.stats.staticDraws<=24);let triangles=0;
- q.scene.traverse(o=>{if(!o.geometry)return;for(const a of Object.values(o.geometry.attributes)){for(const v of a.array)assert.ok(Number.isFinite(v));}triangles+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3});assert.ok(triangles>150000&&triangles<350000);
+ q.frame(-1000);assert.ok(q.P.time>=0);q.scene.traverse(o=>{if(!o.geometry)return;for(const a of Object.values(o.geometry.attributes)){for(const v of a.array)assert.ok(Number.isFinite(v));}triangles+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3});assert.ok(triangles>150000&&triangles<350000);
  assert.equal(q.hero.arms.length,2);assert.equal(q.warden.legs.length,2);
  for(let i=0;i<20;i++){q.animateKnight(q.hero,false,.016,i*.016);q.animateKnight(q.warden,true,.016,i*.016);q.effects(.016,i*.016)}
 });
