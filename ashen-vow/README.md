@@ -1,39 +1,21 @@
-# 灰烬誓约 ASHEN VOW
+# 灰烬誓约 · THE LAST BELL
 
-An original third-person dark fantasy combat prototype. All characters, weapons,
-ruined architecture and effects are modeled procedurally as actual 3D geometry.
-This is a compact single-boss encounter, not an open-world game.
+A compact original third-person action level: arrival court, two sentinels, optional chapel checkpoint, an opening gate and a two-phase Warden. No account or backend is required.
 
-## Play
+## Real character art
 
-WASD / arrows: move relative to camera. Shift: sprint. Drag: orbit camera.
-Left click / J: buffered three-cut light chain. K: heavy attack. Space: dodge roll.
-Right click / L: guard. Q: lock target. E: heal. F: rest at embers.
-Escape: pause. R: restart after defeat. Touch controls are also included.
+The player and enemies use the credited CC0 Knight by Patch/anymove: one coherent 59,281-triangle skinned mesh, 22 bones, UVs and color/normal/metallic-roughness maps. This is a licensed base asset, not an original sculpture. See assets/ASSET_CREDITS.md. The source has real Idle, Walk, Run and Hit animation. Its unarmed Attack clip is deliberately not used as a sword strike: sword cuts, cleaves and thrusts are authored on its weighted bones and validated against the actual swept blade.
 
-Rolling has vulnerable startup and recovery. Shield blocks use stamina and can
-break. Attacks, healing and rolls are committed actions. The boss uses windup,
-active and recovery phases, including sweeps, overhead cleaves and narrow thrusts;
-at half health it gains faster attacks and a two-sweep combo. Heavy attacks build
-posture damage; breaking posture opens a committed punish window.
+The GLB is loaded from its public immutable source URL (9.71 MB, CORS enabled); the local development server can use assets/knight.glb. First load needs internet. Three.js r128 and GLTFLoader are vendored under the upstream MIT license. No procedural cube/sphere humanoid fallback is used.
 
-The v4 art pass adds articulated curved armor, forged surface detail, scabbards,
-torn cloth and joint-preserving mesh batching. The ruined cloister uses clustered
-columns, pointed arcades, broken rose tracery, carved mourners, modeled terrain,
-wind-driven flags, weathered paving and a filmic post-process. Sword ribbons use
-the actual hilt and tip movement, rather than a detached screen effect.
+## Controls
 
-## Run
+WASD move; Shift sprint; drag to orbit; wheel zoom. J / left click light chain; K heavy; Space directional dodge; Q lock; L / right click guard; E heal; F interact. Escape pauses; R retries after defeat. Holding guard costs stamina; a timed guard in the first .16 seconds can parry.
 
-Serve this directory with any static web server. There is no backend or account.
-Three.js and OrbitControls are vendored from the official r128 release under the
-upstream MIT license in vendor/LICENSE.txt. No CDN access is required.
+## Run and validation
 
-## Validation
+Serve this directory with any static HTTP server. Run `node --test feel.test.cjs play.test.cjs`. The 19 rule/controller tests cover real swept-segment damage, vertical rejection, commitment and buffer windows, guard thresholds, healing interruption, fresh-run persistence and a control-only complete level through both Boss phases. Controller tests use an explicit synthetic sword fixture; the separate 16-case asset validation samples actual GLB bone transforms for three light cuts, heavy, Boss sweep/slam/thrust and both combo windows. Browser QA checks the real render, model loading, controls and contact feedback.
 
-Run `node --test combat.test.cjs integration.test.cjs` and `node --check game.js`.
-The rules tests cover facing, reach, wrapped angles, dodge protection,
-shield stamina and phase-specific attack timing. Browser validation covers
-actual rendering and the playable encounter. Integration tests use real Three.js
-geometry and a stub renderer to exercise mesh validity, chained inputs, roll
-recovery, healing, restart and phase transitions; they do not replace GPU QA.
+## Files
+
+`game.js` owns the controller and level flow; `feel.js` owns collision/timing; `characters.js` and `motion.js` preserve/import the real mesh and animate its bones; `level.js` owns the environment; `render.js`, `audio.js` and `ui.js` own presentation.
