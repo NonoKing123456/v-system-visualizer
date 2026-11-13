@@ -1,20 +1,40 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0c1014"><meta name="description" content="灰烬誓约，一款可在浏览器直接游玩的原创暗黑奇幻战斗 Demo。翻滚、格挡、体力管理，挑战无冕守门者。"><title>灰烬誓约 · ASHEN VOW</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3L38 42L32 59L26 42Z' fill='%23c8a36e'/%3E%3Cpath d='M13 39H51' stroke='%23c8a36e' stroke-width='4'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head><body>
-<canvas id="game" tabindex="0" aria-label="灰烬誓约 3D 战斗场景"></canvas>
-<div id="vignette"></div><div id="damage-flash"></div><div id="phase-flash"></div>
-<header id="player-hud" class="hud"><div class="sigil"><span>✧</span></div><div class="bars"><div class="bar health"><div id="health-trail"></div><div id="health-fill"></div></div><div class="bar stamina"><div id="stamina-fill"></div></div><div class="player-caption"><span>流浪的誓约者</span><span id="hp-label">100 / 100</span></div></div></header>
-<div id="world-title" class="hud"><span>AN ORIGINAL COMBAT STUDY</span><strong>灰烬誓约</strong><small>ASHEN VOW</small></div>
-<div id="equipment" class="hud"><div class="weapon-icon">╱</div><div><span>流亡者长剑</span><small><kbd>J</kbd> 轻击　<kbd>K</kbd> 重击</small></div><div class="flask"><i></i><b id="flask-count">3</b></div><div><span>余烬之瓶</span><small><kbd>E</kbd> 饮用</small></div></div>
-<div id="boss-hud" class="hud hidden"><div class="boss-title"><span id="boss-name">无冕守门者</span><small id="boss-phase">THE CROWNLESS WARDEN</small></div><div class="bar boss-health"><div id="boss-trail"></div><div id="boss-fill"></div></div></div>
-<div id="lock-dot" class="hidden"></div><div id="context" class="hidden"><kbd>F</kbd><span>在余烬旁休息</span></div>
-<div id="combat-note" role="status"></div><div id="chapter"><small>遗忘之境</small><span>钟声止息的庭院</span></div>
-<footer class="hud"><div class="control-line"><span><kbd>WASD</kbd> 移动</span><span><kbd>Space</kbd> 翻滚</span><span><kbd>Q</kbd> 锁定</span><span><kbd>右键 / L</kbd> 格挡</span><span class="extra"><kbd>Shift</kbd> 奔跑</span><span class="extra">拖动旋转 · 滚轮缩放</span></div><div class="menu-buttons"><button id="audio-btn" title="切换音效">音效 关</button><button id="help-btn" title="操作说明">?</button><button id="pause-btn" title="暂停或继续">Ⅱ</button></div></footer>
-<div id="start-screen"><div class="start-orbit"></div><div class="intro-kicker">A THIRD PERSON ACTION DEMO</div><h1>灰烬誓约</h1><div class="intro-en">A S H E N &nbsp; V O W</div><p>钟声已止。守门者仍未离去。<br>拾起剑，走完最后一段路。</p><button id="begin-btn">踏入废墟 <span>↗</span></button><div class="intro-controls">移动 · 观察前摇 · 翻滚避让 · 伺机出剑</div><small>原创场景与角色 / 无需下载 / 建议使用键盘与鼠标</small></div>
-<div id="result" class="hidden"><div class="result-inner"><small id="result-kicker">THE VOW REMAINS</small><h2 id="result-title">誓约未尽</h2><p id="result-copy">火尚未熄，旅途仍将继续。</p><button id="retry-btn">于余烬中苏醒</button></div></div>
-<dialog id="help"><button id="help-close" aria-label="关闭">×</button><small>THE WAY OF THE VOW</small><h2>每一剑，都要留有余力。</h2><p>绕到敌人的侧面，观察举剑的前摇，在剑落下前翻滚。等待挥空后的破绽，再出手。</p><dl><dt>WASD / 方向键</dt><dd>相对于镜头移动；Shift 奔跑。</dd><dt>左键 / J · K</dt><dd>轻攻击 · 重攻击。攻击命中会削减敌人的韧性。</dd><dt>Space · 右键 / L</dt><dd>翻滚 · 举盾。翻滚中段可免伤；格挡消耗体力。</dd><dt>Q · E · F</dt><dd>锁定敌人 · 喝药恢复生命 · 在余烬旁休息。</dd><dt>拖动 · 滚轮 · Esc</dt><dd>旋转镜头 · 缩放 · 暂停。手机可用屏幕按钮。</dd></dl><p class="tip">生命降至一半后，守门者会进入第二阶段。</p><button id="help-resume">返回庭院</button></dialog>
-<div id="pause-screen" class="hidden"><h2>时光暂息</h2><button id="resume-btn">继续旅途</button><button id="restart-btn">重新挑战</button></div>
-<div id="touch-ui"><div id="joy"><i id="joy-knob"></i></div><div class="touch-skills"><button id="touch-lock">锁定</button><button id="touch-heal">药</button><button id="touch-roll">闪</button><button id="touch-heavy">重</button><button id="touch-light">剑</button></div></div>
-<div id="fatal" hidden><h2>未能唤醒庭院</h2><p id="fatal-text"></p><button onclick="location.reload()">重新载入</button></div>
-<script>addEventListener('error',e=>{const p=document.getElementById('fatal');if(p){p.hidden=false;document.getElementById('fatal-text').textContent=e.message||'图形资源未能载入，请启用浏览器硬件加速后重试。'}});</script>
-<script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js?v=3"></script><script src="game.js?v=3"></script>
-</body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1116">
+  <meta name="description" content="灰烬誓约：月下废墟中的第三人称动作游戏 Demo。握紧长剑，观察前摇，在最后的庭院挑战无冠守望者。">
+  <title>灰烬誓约 · ASHEN VOW</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3L38 42L32 59L26 42Z' fill='%23c8a36e'/%3E%3Cpath d='M13 39H51' stroke='%23c8a36e' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+  <canvas id="game" tabindex="0" aria-label="灰烬誓约 3D 战斗场景"></canvas>
+  <div id="vignette" aria-hidden="true"></div><div id="film-grain" aria-hidden="true"></div><div id="damage-flash" aria-hidden="true"></div><div id="phase-flash" aria-hidden="true"></div>
+  <header id="player-hud" class="hud" aria-label="角色状态">
+    <div class="sigil" aria-hidden="true"><svg viewBox="0 0 48 60"><path d="M24 4 28 37 24 53 20 37Z"/><path d="M11 35H37M19 47H29M24 51V57"/><circle cx="24" cy="30" r="17"/></svg></div>
+    <div class="bars"><div class="bar health" aria-label="生命"><div id="health-trail"></div><div id="health-fill"></div></div><div class="bar stamina" aria-label="体力"><div id="stamina-fill"></div></div><div class="player-caption"><span>余火中的誓约者</span><span id="hp-label">100 / 100</span></div></div>
+  </header>
+  <aside id="world-title" class="hud"><span>THE FORSAKEN CLOISTER</span><strong>余烬回廊</strong><div class="objective"><i></i><div><b id="objective-label">击败无冠守望者</b><small id="objective-detail">观察前摇，寻找破绽</small></div></div></aside>
+  <div id="equipment" class="hud" aria-label="武器与药瓶">
+    <div class="weapon-icon" aria-hidden="true"><svg viewBox="0 0 40 68"><path d="m20 4 4 37-4 10-4-10Z"/><path d="M8 43Q20 39 32 43M20 45V60M16 61H24"/></svg></div>
+    <div class="equipment-copy"><span>誓约者长剑</span><small><kbd>J</kbd> 轻击 <em>/</em> <kbd>K</kbd> 重击</small></div><div class="equipment-divider"></div><div class="flask" aria-hidden="true"><i></i><b id="flask-count">3</b></div><div class="equipment-copy"><span>余烬之瓶</span><small><kbd>E</kbd> 饮用</small></div>
+  </div>
+  <section id="boss-hud" class="hud hidden" aria-label="首领状态"><div class="boss-title"><span id="boss-name">无冠守望者</span><small id="boss-phase">THE CROWNLESS WARDEN</small></div><div class="boss-frame"><i class="frame-end left"></i><div class="bar boss-health"><div id="boss-trail"></div><div id="boss-fill"></div></div><i class="frame-end right"></i></div><div id="boss-posture" aria-label="首领失衡积累"><div id="boss-posture-fill"></div></div></section>
+  <div id="lock-dot" class="hidden" aria-hidden="true"><i></i></div><div id="context" class="hidden"><kbd>F</kbd><span>在余烬旁休息</span></div><div id="combat-note" role="status" aria-live="polite"></div><div id="chapter"><small>遗忘之地 · 第一誓</small><span>余烬未熄的庭院</span></div>
+  <footer class="hud"><div class="control-line"><span><kbd>WASD</kbd> 移动</span><span><kbd>Space</kbd> 翻滚</span><span><kbd>Q</kbd> 锁定</span><span><kbd>L / 右键</kbd> 格挡</span><span class="extra"><kbd>Shift</kbd> 冲刺</span><span class="extra camera-hint">拖动镜头 · 滚轮缩放</span></div><div class="menu-buttons"><button id="audio-btn" title="切换声音" aria-label="切换声音">声音 关</button><button id="help-btn" title="操作说明" aria-label="打开操作说明">?</button><button id="pause-btn" title="暂停 / 继续" aria-label="暂停或继续">Ⅱ</button></div></footer>
+  <main id="start-screen">
+    <div class="start-border" aria-hidden="true"></div><div class="title-content"><div class="intro-kicker"><span></span> AN ORIGINAL ACTION DEMO</div><div class="title-mark" aria-hidden="true"><svg viewBox="0 0 100 120"><circle cx="50" cy="54" r="35"/><path d="M50 5 57 78 50 105 43 78ZM21 74Q50 62 79 74M50 102V118M42 112H58"/><path d="M17 18 23 24M77 24 83 18M6 54H13M87 54H94"/></svg></div><h1>灰烬誓约</h1><div class="intro-en">ASHEN VOW</div><div class="title-rule" aria-hidden="true"><i></i></div><p>钟声已止，守望者仍未离去。<br>最后的誓言，留给穿过灰烬的人。</p><button id="begin-btn"><span class="begin-label">踏入余烬</span><span class="begin-arrow" aria-hidden="true">→</span></button><div class="intro-controls"><span>观察</span><i></i><span>闪避</span><i></i><span>反击</span></div></div>
+    <div class="intro-location"><span>Ⅰ</span><div>THE FORSAKEN CLOISTER<small>月下庭院 · 无冠守望者</small></div></div><div class="intro-bottom"><span>原创第三人称动作 Demo</span><span>建议使用键鼠 <i>·</i> <kbd>Enter</kbd> 开始</span></div>
+  </main>
+  <aside id="encounter-brief" aria-label="初次战斗提示"><span class="brief-index">01</span><div><small>最后的守望</small><p>走近庭院中央。按 <kbd>Q</kbd> 锁定目标。</p><span>攻击会消耗体力；留一点，给下一次翻滚。</span></div></aside>
+  <div id="result" class="hidden"><div class="result-inner"><small id="result-kicker">THE VOW REMAINS</small><h2 id="result-title">誓约未竟</h2><div class="result-rule"></div><p id="result-copy">余火未熄，旅途还将继续。</p><button id="retry-btn">于余烬中重生 <span>↗</span></button><div class="result-hint"><kbd>R</kbd> 再次挑战</div></div></div>
+  <dialog id="help" aria-labelledby="help-title"><button id="help-close" aria-label="关闭操作说明">×</button><small>THE WAY OF THE VOW</small><h2 id="help-title">每一剑，都留有余地。</h2><p>观察武器抬起的方向，在攻击到来时翻滚。等守望者挥空、收剑，再把握反击的间隙。</p><dl><div><dt>行进</dt><dd><kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 冲刺</dd></div><div><dt>出剑</dt><dd><kbd>J / 左键</kbd> 三段轻击 <kbd>K</kbd> 重击</dd></div><div><dt>防御</dt><dd><kbd>Space</kbd> 翻滚 <kbd>L / 右键</kbd> 格挡</dd></div><div><dt>应对</dt><dd><kbd>Q</kbd> 锁定 <kbd>E</kbd> 喝药 <kbd>F</kbd> 休息</dd></div><div><dt>镜头</dt><dd>拖动旋转 · 滚轮缩放 <kbd>Esc</kbd> 暂停</dd></div></dl><p class="tip">翻滚中段可避开伤害。举盾消耗体力，耗尽会破防；重击可使守望者失衡。守望者半血后会改变攻击节奏。</p><button id="help-resume">返回庭院 <span>→</span></button></dialog>
+  <div id="pause-screen" class="hidden"><small>A MOMENT BETWEEN EMBERS</small><h2>时光暂歇</h2><div class="pause-rule"></div><button id="resume-btn">继续旅途 <span>→</span></button><button id="restart-btn">重新挑战</button><span class="pause-hint"><kbd>Esc</kbd> 返回</span></div>
+  <div id="touch-ui"><div id="joy"><i id="joy-knob"></i></div><div class="touch-skills"><button id="touch-lock">锁定</button><button id="touch-heal">药</button><button id="touch-guard">盾</button><button id="touch-roll">滚</button><button id="touch-heavy">重</button><button id="touch-light">轻</button></div></div>
+  <div id="fatal" hidden><small>THE EMBER IS INTERRUPTED</small><h2>未能唤醒庭院</h2><p id="fatal-text"></p><button onclick="location.reload()">重新载入 →</button></div>
+  <script>addEventListener('error',e=>{const p=document.getElementById('fatal');if(p){p.hidden=false;document.getElementById('fatal-text').textContent=e.message||'图形资源未能载入，请确认浏览器已开启硬件加速后重试。'}});</script>
+  <script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="combat.js?v=4"></script><script src="characters.js?v=4"></script><script src="world.js?v=4"></script><script src="polish.js?v=4"></script><script src="game.js?v=4"></script>
+</body>
+</html>
