@@ -5,7 +5,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function create(options={}){
  let context=null,disposed=false,enabled=options.enabled!==false,volume=clamp(Number.isFinite(Number(options.volume))?Number(options.volume):.72,0,1);
  let master=null,compressor=null,fxBus=null,ambienceBus=null,musicBus=null,room=null,roomGain=null;
- let noiseWhite=null,noiseBrown=null,windFilter=null,windGain=null,windSource=null;
+ let noiseWhite=null,noiseBrown=null,windFilter=null,windGain=null,windSource=null,rainGain=null;
  const nodes=new Set(),loops=new Set(),lastEvent=new Map();
  let elapsed=0,lastPad=-100,lastBell=8,combatAmount=0,previousCombat=false,phase=1,padIndex=0,paused=false;
  const random=()=>Math.random(),now=()=>context?context.currentTime:0;
@@ -74,6 +74,7 @@ function create(options={}){
    windSource.connect(windFilter);windFilter.connect(high);high.connect(windGain);windGain.connect(ambienceBus);windSource.start();loops.add(windSource);
    // A second, very quiet moving air band prevents a flat static hiss.
    const upper=track(context.createBufferSource()),upperFilter=filter('bandpass',1150,.48),upperGain=gain(.009);upper.buffer=noiseWhite;upper.loop=true;upper.connect(upperFilter);upperFilter.connect(upperGain);upperGain.connect(ambienceBus);upper.start();loops.add(upper);
+   const rain=track(context.createBufferSource()),rainBand=filter('bandpass',2700,.38);rainGain=gain(.055);rain.buffer=noiseWhite;rain.loop=true;rain.connect(rainBand);rainBand.connect(rainGain);rainGain.connect(ambienceBus);rain.start();loops.add(rain);
    return true;
   }catch(_){context=null;return false;}
  }
@@ -128,6 +129,7 @@ function create(options={}){
     oscillator({frequency:heavy?118:171,end:70,type:'triangle',volume:.055,duration:.18,time:t,config,send:.12});
     for(const [f,v]of [[699,.036],[1121,.016],[1772,.008]])oscillator({frequency:f,end:f*.96,volume:v,duration:.20,time:t,config,send:.23});
     noise({duration:.055,volume:.065,type:'highpass',frequency:1300,time:t,config,send:.13});break;
+   case 'critical':
    case 'guardbreak':case 'guard-break':case 'posture':
     oscillator({frequency:70,end:25,type:'triangle',volume:.14,duration:.42,time:t,config,send:.25});
     for(let i=0;i<4;i++)oscillator({frequency:[319,607,941,1427][i],end:[186,401,631,1049][i],type:i<2?'triangle':'sine',volume:.038/(i+1),duration:.45+i*.08,time:t+i*.011,config,send:.4});
@@ -169,6 +171,7 @@ function create(options={}){
   const inCombat=Boolean(state.combat),nextPhase=Number(state.phase)||1;paused=Boolean(state.paused);
   combatAmount+=((inCombat&&!paused?1:0)-combatAmount)*(1-Math.exp(-dt*1.5));combatAmount=clamp(combatAmount,0,1);
   if(!playable())return;
+  if(rainGain)parameter(rainGain.gain,state.sheltered?.012:.055,now(),.8);
   const t=now();parameter(ambienceBus.gain,paused?.11:.28,t,.5);parameter(musicBus.gain,paused?.035:.10+combatAmount*.075,t,.55);
   if(windFilter)parameter(windFilter.frequency,410+Math.sin(elapsed*.17)*145+Math.sin(elapsed*.039)*70,t,.4);
   if(windGain)parameter(windGain.gain,.038+Math.sin(elapsed*.21)*.011+Math.sin(elapsed*.057)*.008,t,.5);

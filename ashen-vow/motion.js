@@ -88,9 +88,10 @@ function createAnimator(actor,T){
       offset(bones.head,0,.10*(1-release)*recover,0);
     }
     if(hurt){const recoil=(1-smooth(time/(state==='stagger'?1.15:.46)));offset(chest,-.20*recoil,0,.08*recoil);offset(bones.head,.16*recoil,0,0);offset(bones.rightUpper,.16*recoil,0,0);}
+    if(state==='stagger'){const kneel=smooth(time/.22);offset(chest,.38*kneel,0,-.08*kneel);offset(bones.head,.26*kneel,0,0);offset(bones.leftThigh,-.34*kneel,0,0);offset(bones.leftShin,.62*kneel,0,0);offset(bones.rightShin,.26*kneel,0,0);}
     if(state==='phase'){const power=smooth(time/.55);offset(bones.rightUpper,-1.0*power,0,.35*power);offset(bones.leftUpper,-.40*power,0,-.30*power);offset(chest,-.08*power,0,0);offset(bones.head,-.13*power,0,0);}
     if(lastState==='roll'&&!rolling)actor.pivot.rotation.x=0;
-    let pivotY=.95,pivotX=0,pivotZ=0;
+    let pivotY=state==='stagger'?.79:.95,pivotX=0,pivotZ=0;
     if(rolling){const u=clamp(time/.64,0,1);pivotX=-Math.PI*2*smooth(u);pivotY=.67+Math.sin(u*Math.PI)*.16;offset(bones.spine,.45,0,0);offset(bones.leftThigh,-1.1,0,0);offset(bones.rightThigh,-1.1,0,0);offset(bones.leftShin,1.6,0,0);offset(bones.rightShin,1.6,0,0);offset(bones.leftUpper,-1.0,0,0);offset(bones.rightUpper,-1.0,0,0);}
     if(dead){const fall=smooth(time/1.05);pivotY=.95-.64*fall;pivotZ=(actor.isBoss?-1:1)*1.49*fall;offset(chest,-.10*fall,0,0);}
     if(rolling)actor.pivot.rotation.x=pivotX;else actor.pivot.rotation.x+=(pivotX-actor.pivot.rotation.x)*(1-Math.exp(-16*dt));

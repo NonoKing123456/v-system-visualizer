@@ -29,7 +29,7 @@ function create({THREE:T,canvas}){
  const reflection=new T.DataTexture(pixels,256,128,T.RGBAFormat);reflection.mapping=T.EquirectangularReflectionMapping;reflection.encoding=T.sRGBEncoding;reflection.magFilter=T.LinearFilter;reflection.minFilter=T.LinearFilter;reflection.needsUpdate=true;
  const environmentBaker=new T.PMREMGenerator(renderer);environmentBaker.compileEquirectangularShader();const environmentTarget=environmentBaker.fromEquirectangular(reflection);scene.environment=environmentTarget.texture;environmentBaker.dispose();reflection.dispose();
 
- const size=new T.Vector2();let quality='high',disposed=false;
+ const size=new T.Vector2();let quality='high',disposed=false,renderScale=1,frameAverage=1/60,adaptAge=0,settle=0;
  const depthSupported=!!(renderer.capabilities.isWebGL2||renderer.extensions.has('WEBGL_depth_texture'));
  const derivativeSupported=!!(renderer.capabilities.isWebGL2||renderer.extensions.has('OES_standard_derivatives'));
  const useDepth=depthSupported&&derivativeSupported;
@@ -107,11 +107,12 @@ function create({THREE:T,canvas}){
    }`
  });
  const postScene=new T.Scene(),postCamera=new T.Camera(),quad=new T.Mesh(new T.PlaneGeometry(2,2),post);postScene.add(quad);
- function resize(){if(disposed)return;const w=Math.max(1,global.innerWidth||canvas.clientWidth||1280),h=Math.max(1,global.innerHeight||canvas.clientHeight||720);renderer.setPixelRatio(Math.min(global.devicePixelRatio||1,quality==='high'?1.5:1));renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.getDrawingBufferSize(size);target.setSize(Math.max(1,size.x),Math.max(1,size.y));uniforms.texel.value.set(1/size.x,1/size.y);uniforms.projectionScale.value=camera.projectionMatrix.elements[5];}
- function setQuality(value){quality=value==='low'?'low':'high';const depthDefine=useDepth&&quality==='high'?1:0;if(post.defines.HAS_DEPTH!==depthDefine){post.defines.HAS_DEPTH=depthDefine;post.needsUpdate=true;}uniforms.aoStrength.value=depthDefine?.42:0;uniforms.bloomStrength.value=quality==='high'?.085:.045;moon.shadow.mapSize.set(quality==='high'?2048:1024,quality==='high'?2048:1024);if(moon.shadow.map){moon.shadow.map.dispose();moon.shadow.map=null;}resize();}
+ function resize(){if(disposed)return;const w=Math.max(1,global.innerWidth||canvas.clientWidth||1280),h=Math.max(1,global.innerHeight||canvas.clientHeight||720);renderer.setPixelRatio(Math.min(global.devicePixelRatio||1,quality==='high'?1.35:1)*renderScale);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.getDrawingBufferSize(size);target.setSize(Math.max(1,size.x),Math.max(1,size.y));uniforms.texel.value.set(1/size.x,1/size.y);uniforms.projectionScale.value=camera.projectionMatrix.elements[5];}
+ function setQuality(value){quality=value==='low'?'low':'high';renderScale=1;adaptAge=settle=0;const depthDefine=useDepth&&quality==='high'?1:0;if(post.defines.HAS_DEPTH!==depthDefine){post.defines.HAS_DEPTH=depthDefine;post.needsUpdate=true;}uniforms.aoStrength.value=depthDefine?.42:0;uniforms.bloomStrength.value=quality==='high'?.085:.045;moon.shadow.mapSize.set(quality==='high'?2048:1024,quality==='high'?2048:1024);if(moon.shadow.map){moon.shadow.map.dispose();moon.shadow.map=null;}resize();}
  resize();
  return {renderer,scene,camera,lights:{ambient,moon,skyFill,groundBounce},
-  render(dt,t,feedback={}){if(disposed)return;uniforms.damage.value=Number.isFinite(feedback.damage)?feedback.damage:0;uniforms.phase.value=Number.isFinite(feedback.phase)?feedback.phase:0;const previous=renderer.getRenderTarget();renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(previous);renderer.render(postScene,postCamera);},
+  getResolution:()=>Number(renderScale.toFixed(2)),
+  render(dt,t,feedback={}){if(disposed)return;if(dt>0&&dt<.15){frameAverage+=(dt-frameAverage)*.04;adaptAge+=dt;settle+=dt;if(adaptAge>3&&settle>2.5){const previousScale=renderScale;if(frameAverage>1/43)renderScale=Math.max(.72,renderScale-.08);else if(frameAverage<1/58)renderScale=Math.min(1,renderScale+.04);if(Math.abs(renderScale-previousScale)>.001){settle=0;resize();}}}uniforms.damage.value=Number.isFinite(feedback.damage)?feedback.damage:0;uniforms.phase.value=Number.isFinite(feedback.phase)?feedback.phase:0;const previous=renderer.getRenderTarget();renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(previous);renderer.render(postScene,postCamera);},
   resize,setQuality,
   dispose(){if(disposed)return;disposed=true;target.dispose();quad.geometry.dispose();post.dispose();environmentTarget.dispose();renderer.dispose();}
  };

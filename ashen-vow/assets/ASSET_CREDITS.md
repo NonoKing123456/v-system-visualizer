@@ -23,3 +23,24 @@ the game or redistributed with this release.
 
 Three.js r128 and its GLTFLoader: https://github.com/mrdoob/three.js/tree/r128
 MIT licence retained in ../vendor/LICENSE.txt.
+
+## Rain-night release: locally served optimized asset
+
+`knight-v11.glb` is a 3,386,020-byte derivative of the CC0 Knight above.
+All 59,281 triangles, 22 bones, skin weights and nine clips are retained.
+Only its embedded JPEG images are resampled to at most 1024 pixels and
+re-encoded at quality 91. No image is used as a substitute for a 3D mesh.
+
+## Stone surfaces — Poly Haven, CC0
+
+- Cobblestone Floor 08 — Rob Tuytel: https://polyhaven.com/a/cobblestone_floor_08
+- Stone Brick Wall 001 — https://polyhaven.com/a/stone_brick_wall_001
+- Licence: CC0 1.0 Universal. https://polyhaven.com/license
+- API download records are retained in `surfaces/source.json`.
+- Original 1K JPEG diffuse, OpenGL normal and roughness maps are locally
+  redistributed, re-encoded for delivery at quality 86 (color/roughness) and
+  90 (normal). Surface scale is projected in world units after mesh transforms.
+
+Rain, ripples, wet-patch shapes, foliage geometry and sound design are authored
+by this project. Puddle reflections are environment-map reflections; this
+release does not implement screen-space or planar reflections.

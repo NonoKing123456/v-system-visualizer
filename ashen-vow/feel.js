@@ -13,6 +13,7 @@ const LIGHT=[
  {id:'light-2',kind:'light',index:2,pose:'overhead-finisher',windup:.30,active:.18,followThrough:.16,recovery:.27,stamina:24,damage:38,poise:43,reach:2.25,lunge:.62,hitstop:.078,cancelAt:.68,guardAt:.72,chainOpen:.70,chainClose:.88,twist:-.24,slash:0}
 ];
 const HEAVY={id:'heavy',kind:'heavy',index:0,pose:'charged-cleave',windup:.51,active:.20,followThrough:.17,recovery:.26,stamina:34,damage:54,poise:65,reach:2.45,lunge:.80,hitstop:.095,cancelAt:.91,guardAt:.96,chainOpen:.94,chainClose:1.11,twist:-.35,slash:0};
+const CRITICAL={id:'critical',kind:'critical',type:'thrust',index:0,pose:'riposte-thrust',windup:.30,active:.24,followThrough:.20,recovery:.40,stamina:28,damage:100,poise:0,reach:2.65,lunge:.48,hitstop:.14,cancelAt:1.14,guardAt:1.14,chainOpen:Infinity,chainClose:Infinity};
 const ROLL={id:'roll',kind:'roll',index:0,pose:'directional-roll',windup:.075,active:.325,followThrough:.09,recovery:.13,stamina:25,damage:0,poise:0,reach:0,lunge:2.85,hitstop:0,cancelAt:.62,guardAt:.58,chainOpen:.55,chainClose:.62,iframeStart:.075,iframeEnd:.40};
 const SENTINEL={id:'sentinel-cut',kind:'sentinel',index:0,pose:'diagonal-right',windup:.72,active:.22,followThrough:.20,recovery:.48,stamina:0,damage:19,poise:18,reach:2.05,lunge:.46,hitstop:.052,cancelAt:1.62,guardAt:1.62,chainOpen:1.62,chainClose:1.62,twist:-.68,slash:1,turnLock:.48};
 const BOSS={
@@ -30,7 +31,7 @@ function finishProfile(p){
 }
 function getMove(kind='light',index=0){
  const i=((Math.trunc(Number(index)||0)%3)+3)%3;
- return finishProfile(kind==='heavy'?HEAVY:kind==='roll'?ROLL:kind==='sentinel'?SENTINEL:LIGHT[i]);
+ return finishProfile(kind==='critical'?CRITICAL:kind==='heavy'?HEAVY:kind==='roll'?ROLL:kind==='sentinel'?SENTINEL:LIGHT[i]);
 }
 function getBossMove(index=0,phase=1){
  const phase2=phase===true||Number(phase)>=2;
@@ -38,6 +39,10 @@ function getBossMove(index=0,phase=1){
  const i=((Math.trunc(Number(index)||0)%pattern.length)+pattern.length)%pattern.length,type=pattern[i],p=BOSS[type];
  const windup=p.windup*(phase2?.86:1),recovery=p.recovery*(phase2?.88:1);
  return finishProfile({...p,id:'boss-'+type,kind:'boss',type,index:i,phase:phase2?2:1,stamina:0,windup,recovery,cancelAt:Infinity,guardAt:Infinity,chainOpen:Infinity,chainClose:Infinity});
+}
+function getSentinelMove(index=0,cycle=0){
+ if(index===1&&cycle%2===1)return finishProfile({...SENTINEL,id:'sentinel-thrust',type:'thrust',pose:'long-thrust',windup:.88,active:.23,damage:22,lunge:.64,recovery:.60});
+ return getMove('sentinel');
 }
 function samplePose(move,time){
  const t=clamp(Number(time)||0,0,move.total),windows=move.windows||[[move.windup,move.windup+move.active,1]];
@@ -135,6 +140,18 @@ function consumeInput(buffer,now,allowed){
  if(i<0)return null;
  return buffer.entries.splice(i,1)[0].action;
 }
-const api={angleDelta,getMove,getBossMove,samplePose,canCancel,sweptBladeHit,segmentDistanceSqXZ,circleOverlap,guardHit,createInputBuffer,queueInput,consumeInput};
+// Segment-versus-box camera collision avoids raycasting the full scenery mesh.
+function cameraDistance(origin,goal,obstacles,padding=.22){
+ const dx=goal.x-origin.x,dy=goal.y-origin.y,dz=goal.z-origin.z,length=Math.hypot(dx,dy,dz);let nearest=1;
+ if(length<.001)return length;
+ for(const o of obstacles){
+  const w=o.w??(o.r||.3)*2,d=o.d??(o.r||.3)*2,h=o.h||4;
+  const lo=[o.x-w/2-padding,-.25,o.z-d/2-padding],hi=[o.x+w/2+padding,h,o.z+d/2+padding],p=[origin.x,origin.y,origin.z],v=[dx,dy,dz];let enter=0,exit=1,hit=true;
+  for(let a=0;a<3;a++){if(Math.abs(v[a])<1e-8){if(p[a]<lo[a]||p[a]>hi[a]){hit=false;break}}else{let n=(lo[a]-p[a])/v[a],f=(hi[a]-p[a])/v[a];if(n>f)[n,f]=[f,n];enter=Math.max(enter,n);exit=Math.min(exit,f);if(enter>exit){hit=false;break}}}
+  if(hit&&enter>0&&enter<nearest)nearest=enter;
+ }
+ return Math.max(.75,length*nearest-.08);
+}
+const api={cameraDistance,angleDelta,getMove,getBossMove,getSentinelMove,samplePose,canCancel,sweptBladeHit,segmentDistanceSqXZ,circleOverlap,guardHit,createInputBuffer,queueInput,consumeInput};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.AshenCombat=api;
 })(typeof window!=='undefined'?window:globalThis);

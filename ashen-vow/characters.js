@@ -67,6 +67,7 @@ function createKnight({THREE:T,scene,M={},isBoss=false,variant=''}){
   }else steelMesh=includedSword;
   const swordBinding=bindings.find(b=>b.slot===swordSlot);
   const weapon={grip:{bindInverse:swordBinding.bindInverse,orientation:swordBinding.orientation},group:swordSlot,steel:steelMesh,base:new T.Vector3(0,-.15,0),tip:new T.Vector3(0,-bladeLen,0),bladeLength:bladeLen,restPitch:0,included:!!includedSword&&!replaceSword};
+  const halo=new T.Mesh(new T.RingGeometry(.48,.51,40),new T.MeshBasicMaterial({color:'#e0bb79',transparent:true,opacity:.65,side:T.DoubleSide,depthWrite:false}));halo.rotation.x=-Math.PI/2;halo.position.y=.032;root.add(halo);halo.visible=false;
   if(boss){
     const crown=slot(rig.head,'broken_coronet');
     const band=new T.Mesh(new T.CylinderGeometry(.105,.101,.032,14,1,true),hiltMat);band.position.y=.165;crown.add(band);
@@ -88,6 +89,7 @@ function createKnight({THREE:T,scene,M={},isBoss=false,variant=''}){
   const mixer=new T.AnimationMixer(visual),actor={root,pivot,model,visual,body,neck,head,arms,legs,weapon,shield,cape,rig,mixer,clips:template.clips,materials:actorMaterials,isBoss:boss,variant,scale:root.scale.x,walk:0,blend:0,hit:0,_clothFrame:0,source:template.url};
   actor.updateEquipment=()=>{root.updateWorldMatrix(true,true);root.getWorldQuaternion(rootInv).invert();for(const b of bindings){b.target.getWorldPosition(v);art.worldToLocal(v);b.slot.position.copy(v);b.target.getWorldQuaternion(q);b.slot.quaternion.copy(rootInv).multiply(q).multiply(b.bindInverse).multiply(b.orientation);}art.updateWorldMatrix(false,true);if(includedSword&&!replaceSword){includedSword.geometry.computeBoundingBox();const bb=includedSword.geometry.boundingBox;const axis=['x','y','z'].sort((a,b)=>(bb.max[b]-bb.min[b])-(bb.max[a]-bb.min[a]))[0];const localTip=bb.getCenter(new T.Vector3());localTip[axis]=Math.abs(bb.max[axis])>Math.abs(bb.min[axis])?bb.max[axis]:bb.min[axis];includedSword.localToWorld(localTip);swordSlot.worldToLocal(localTip);weapon.tip.copy(localTip);}};
   if(rig.rightUpper&&rig.spine){rig.rightUpper.getWorldPosition(v);actor.anatomyRightSign=Math.sign(v.x-root.position.x)||-1;}
+  actor.setCombatCue=(o)=>{halo.visible=o.state==='stagger';if(halo.visible){halo.scale.setScalar(1+Math.sin(o.time*7)*.10);halo.material.opacity=.45+Math.sin(o.time*7)*.18;}swordMat.emissive.set('#bb6524');swordMat.emissiveIntensity=o.state==='attack'&&o.attack&&o.time<o.attack.windup?Math.max(0,o.time/o.attack.windup-.45)*.9:0;};
   actor.setHit=value=>{actor.hit=Math.max(actor.hit,Number(value)||0);};
   actor.animate=global.AshenMotion.createAnimator(actor,T);root.userData.artStats={meshes:meshCount,triangles:Math.round(triangles),bones:boneList.length,skinnedMeshes:template.info.meshes.filter(m=>m.skinned).length,animations:template.clips.map(c=>c.name)};actor.updateEquipment();actor.animate({state:'idle',time:0,dt:.016,t:0,speed:0});return actor;
 }

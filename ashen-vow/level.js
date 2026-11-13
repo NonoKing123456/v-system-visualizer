@@ -1,7 +1,7 @@
 /* ASHEN VOW — The Exile's Procession. Original authored short level. */
 (function(global){
 'use strict';
-function create({THREE:T,scene,renderer,M}){
+function create({THREE:T,scene,renderer,M,surfaces}){
  const PI=Math.PI,TAU=PI*2,lerp=T.MathUtils.lerp;let seed=0x3c73a1;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const root=new T.Group(),architecture=new T.Group(),life=new T.Group();root.name="The Exile's Procession";root.add(architecture,life);scene.add(root);
@@ -21,6 +21,12 @@ function create({THREE:T,scene,renderer,M}){
  for(let y=0;y<256;y++)for(let x=0;x<256;x++){const u=x/256,v=y/256,k=(y*256+x)*4,b=noise(u*4.3+5,v*4.3+17),m=noise(u*15+3,v*15+41),f=hash(x,y);const stain=Math.max(0,.56-b)*95,n=221+(m-.5)*29+(f-.5)*13-stain;patina[k]=n-3;patina[k+1]=n;patina[k+2]=n+1;patina[k+3]=255;const g=115+f*50+(m-.5)*19;grain[k]=grain[k+1]=grain[k+2]=g;grain[k+3]=255;}
  function data(bytes,srgb=false){const tex=new T.DataTexture(bytes,256,256,T.RGBAFormat);tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.minFilter=T.LinearMipMapLinearFilter;tex.magFilter=T.LinearFilter;tex.generateMipmaps=true;tex.encoding=srgb?T.sRGBEncoding:T.LinearEncoding;tex.anisotropy=renderer&&renderer.capabilities?Math.min(4,renderer.capabilities.getMaxAnisotropy()):1;tex.needsUpdate=true;textures.push(tex);return tex;}
  const bump=data(grain);for(const [i,m]of [ashStone,obsidian,weathered,edge,flooring,robe,bone,rock].entries()){const map=data(patina.slice(),true);map.offset.set(i*.241,i*.173);map.rotation=i*.47;m.map=map;m.bumpMap=bump;m.bumpScale=m===flooring?.022:.036;}
+ // Texture color is retained instead of multiplying photographs by dark stone tint.
+ const wallMaterials=[ashStone,obsidian,weathered,edge,rock],floorMaterials=[flooring];
+ if(surfaces){
+  for(const m of wallMaterials){m.map=surfaces.wall.color;m.normalMap=surfaces.wall.normal;m.normalScale=new T.Vector2(.38,.38);m.roughnessMap=surfaces.wall.roughness;m.bumpMap=null;m.roughness=1;m.color.set(m===obsidian?'#727d83':m===edge?'#bec4bd':'#a3aeb1').convertSRGBToLinear();m.userData.worldUV=.38;}
+  flooring.map=surfaces.floor.color;flooring.normalMap=surfaces.floor.normal;flooring.normalScale=new T.Vector2(.60,.60);flooring.roughnessMap=surfaces.floor.roughness;flooring.bumpMap=null;flooring.roughness=.68;flooring.color.set('#b1babe').convertSRGBToLinear();flooring.userData.worldUV=.32;
+ }
  function group(p,x=0,y=0,z=0){const g=new T.Group();g.position.set(x,y,z);p.add(g);return g;}
  function mesh(p,geometry,material,x=0,y=0,z=0,cast=true){const m=new T.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;p.add(m);return m;}
  function box(p,x,y,z,w,h,d,m=ashStone,cast=true){return mesh(p,new T.BoxGeometry(w,h,d),m,x,y,z,cast);}
@@ -37,17 +43,16 @@ function create({THREE:T,scene,renderer,M}){
  function pointedShape(half,rise,base,segments=32){const pts=[];for(let i=0;i<=segments;i++){const x=-half+2*half*i/segments;pts.push([x,base+rise*Math.sqrt(Math.max(0,1-Math.abs(x)/half))]);}return pts;}
  function arch(p,cx,base,z,span,rise,thickness=.5,depth=.7,m=ashStone,broken=false){const outer=pointedShape(span*.5+thickness,rise+thickness,base),inner=pointedShape(span*.5,rise,base);const s=new T.Shape();s.moveTo(...outer[0]);for(const pt of outer.slice(1))s.lineTo(...pt);s.lineTo(...inner[inner.length-1]);for(const pt of inner.slice(0,-1).reverse())s.lineTo(...pt);s.closePath();const g=new T.ExtrudeGeometry(s,{depth,bevelEnabled:true,bevelSegments:1,bevelSize:.025,bevelThickness:.025,steps:1,curveSegments:1});g.translate(0,0,-depth*.5);const o=mesh(p,g,m,cx,0,z);if(broken){const a=g.attributes.position;for(let i=0;i<a.count;i++){if(a.getX(i)>0&&a.getY(i)>base+rise*.8)a.setY(i,a.getY(i)-.18*hash(i,3));}a.needsUpdate=true;g.computeVertexNormals();}return o;}
  function structuralWindow(p,x,y,z,w,h){const q=group(p,x,y,z);box(q,-w*.5-.10,h*.5,0,.18,h,.27,edge);box(q,w*.5+.10,h*.5,0,.18,h,.27,edge);box(q,0,-.07,0,w+.45,.16,.42,edge);arch(q,0,h,0,w,w*.68,.15,.28,edge);box(q,0,h*.50,.02,.075,h,.12,bronze);return q;}
- function wall(x,z,w,d,h=4.1,broken=false){const q=group(architecture,x,0,z);box(q,0,h*.5,0,w,h,d,weathered);box(q,0,.18,0,w+.13,.36,d+.15,deep);if(!broken)box(q,0,h+.10,0,w+.16,.22,d+.18,edge);else{const n=Math.max(2,Math.floor(w/1.2));for(let i=0;i<n;i++){const xx=-w*.5+(i+.5)*w/n,hh=.16+random()*.55;box(q,xx,h+hh*.5,0,w/n*.86,hh,d*.88,i%2?obsidian:ashStone);}}for(let y=.95;y<h-.3;y+=1.1)box(q,0,y,d*.5+.012,w,.025,.025,deep);blockCollision(x,z,w,d);return q;}
+ function wall(x,z,w,d,h=4.1,broken=false){const q=group(architecture,x,0,z);box(q,0,h*.5,0,w,h,d,weathered);box(q,0,.18,0,w+.13,.36,d+.15,deep);if(!broken)box(q,0,h+.10,0,w+.16,.22,d+.18,edge);else{const n=Math.max(2,Math.floor(w/1.2));for(let i=0;i<n;i++){const xx=-w*.5+(i+.5)*w/n,hh=.16+random()*.55;box(q,xx,h+hh*.5,0,w/n*.86,hh,d*.88,i%2?obsidian:ashStone);}}for(let y=.95;y<h-.3;y+=1.1)box(q,0,y,d*.5+.012,w,.025,.025,deep);const c=blockCollision(x,z,w,d);c.h=h+.25;return q;}
 
  // Broad ash-stained ground surfaces and a handful of large cracked processional
  // stones establish scale; no evenly repeated tile grid covers the level.
  function floor(x,z,w,d,m=flooring){const g=new T.BoxGeometry(w,.22,d),a=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv;for(let i=0;i<a.count;i++){if(n.getY(i)>.8)uv.setXY(i,(a.getX(i)+x)*.12,(a.getZ(i)+z)*.12);}box(architecture,x,-.45,z,w+.8,.65,d+.8,rock);return mesh(architecture,g,m,x,-.12,z,false);}
- floor(0,15.5,9,13,soil);floor(0,1.5,12,17);floor(-8.5,3.25,7,6.5);floor(0,-8,6.2,4,obsidian);floor(0,-21,23,26);
+ floor(0,15.5,9,13,flooring);floor(0,1.5,12,17);floor(-8.5,3.25,7,6.5);floor(0,-8,6.2,4,obsidian);floor(0,-21,23,26);
  for(let i=0;i<10;i++){const z=18-i*2.55,w=3.15+(i%3)*.21,d=2.1+(i%2)*.15,q=group(architecture,(i%2?-.17:.12),0,z);q.rotation.y=(i%2?1:-1)*.018;const stone=mesh(q,chamfer(w,d,.055,.14),i%3===1?weathered:ashStone,0,-.035,0,false);}
  // Large, irregular fracture branches, with subtle bronze seams in the inner hall.
  for(const [x,z,yaw,length]of [[-2.7,14,.6,2.3],[2.2,10,-.5,2.9],[-3,4,.2,3.5],[2,-3,1.8,3.0],[-5,-14,.3,4.8],[3,-20,-.7,5.4],[-4,-26,.7,4.2],[4,-30,1.0,3.1]]){const q=group(architecture,x,.013,z);q.rotation.y=yaw;curve(q,[[-length*.5,0,0],[-length*.15,0,.13],[length*.16,0,-.14],[length*.5,0,.11]],.012,fracture,7,3);curve(q,[[length*.16,0,-.14],[length*.22,0,-.43],[length*.35,0,-.61]],.007,fracture,4,3);}
- function groundPatch(x,z,rx,rz,m=moss){const pts=[],count=11;for(let i=0;i<count;i++){const a=i/count*TAU,r=.72+random()*.28;pts.push(new T.Vector2(Math.cos(a)*rx*r,Math.sin(a)*rz*r));}const s=new T.Shape(pts),o=mesh(architecture,new T.ShapeGeometry(s),m,x,.015,z,false);o.rotation.x=-PI/2;return o;}
- for(const [x,z,rx,rz]of [[-3.5,17,1.1,2.4],[3.6,12,.8,3.4],[-5.4,8,.6,2.0],[5.3,4,.7,2.6],[-5.2,-3,1.0,2],[-10.8,-16,.8,3.6],[10.7,-25,.6,3.3],[-8.0,-30,1.5,1.4],[-11.2,3,.6,2.1]])groundPatch(x,z,rx,rz);
+ function groundPatch(x,z,rx,rz,m=soil){const pts=[],count=11;for(let i=0;i<count;i++){const a=i/count*TAU,r=.72+random()*.28;pts.push(new T.Vector2(Math.cos(a)*rx*r,Math.sin(a)*rz*r));}const s=new T.Shape(pts),o=mesh(architecture,new T.ShapeGeometry(s),m,x,.015,z,false);o.rotation.x=-PI/2;return o;}
 
  // I. The arrival: a collapsed portico, thick perimeter walls and a view back
  // over the ashen valley. The dominant axis leads directly to the sealed gate.
@@ -175,10 +180,19 @@ function create({THREE:T,scene,renderer,M}){
  for(const [x,z,w,rot]of [[-5.4,4,11,PI/2],[5.4,1,10,PI/2],[-10.3,-21,17,PI/2],[10.4,-23,16,PI/2],[0,-32,18,0],[0,-9.5,5.5,0]]){const o=mesh(life,new T.PlaneGeometry(w,1.6),mist,x,.83,z,false);o.rotation.y=rot;o.renderOrder=2;}
  const ashGeo=new T.BufferGeometry(),ash=new Float32Array(180*3);for(let i=0;i<180;i++){ash[i*3]=(random()-.5)*29;ash[i*3+1]=.2+random()*11;ash[i*3+2]=-32+random()*52;}ashGeo.setAttribute('position',new T.BufferAttribute(ash,3));const ashMaterial=new T.PointsMaterial({color:'#9caeae',size:.028,transparent:true,opacity:.28,depthWrite:false});materials.push(ashMaterial);life.add(new T.Points(ashGeo,ashMaterial));
 
+ // Rain-polished shallow pools use physical environment reflections, not a painted glow.
+ const wet=new T.MeshPhysicalMaterial({color:new T.Color('#667d83').convertSRGBToLinear(),metalness:.12,roughness:.16,clearcoat:1,clearcoatRoughness:.08,transparent:true,opacity:.48,depthWrite:false});materials.push(wet);
+ if(surfaces){wet.normalMap=surfaces.floor.normal;wet.normalScale=new T.Vector2(.07,.07);}
+ for(const [x,z,rx,rz]of [[-2.1,16,.85,1.9],[2.9,12,1.1,1.7],[-3.6,6,.6,1.2],[3.7,1,1.15,2.1],[-2.8,-3,.6,.9],[-4,-16,1.0,1.8],[5,-22,1.6,1.1],[-5,-27,1.1,1.9]]){const pool=groundPatch(x,z,rx,rz,wet);pool.position.y=.026;}
+ const leafMaterial=mat('#455743',0,.88),leafShape=new T.Shape();leafShape.moveTo(0,0);leafShape.quadraticCurveTo(.09,.11,0,.24);leafShape.quadraticCurveTo(-.09,.11,0,0);const leafGeo=new T.ShapeGeometry(leafShape,3);leafMaterial.side=T.DoubleSide;
+ const ivy=new T.InstancedMesh(leafGeo,leafMaterial,520),leafDummy=new T.Object3D();ivy.castShadow=false;ivy.receiveShadow=true;
+ for(let i=0;i<520;i++){const side=i<300?1:-1,wallX=side>0?5.94:-5.94,z=(i<300?7:-2)+Math.sin(i*.24)*1.6+(random()-.5)*.85,y=.2+(i%90)/90*4.2;
+  leafDummy.position.set(wallX-side*(.035+random()*.08),y,z);leafDummy.rotation.set((random()-.5)*.8,side*PI/2,(random()-.5)*2);leafDummy.scale.setScalar(.65+random()*.8);leafDummy.updateMatrix();ivy.setMatrixAt(i,leafDummy.matrix);
+ }life.add(ivy);
  // Static surfaces collapse into a small number of GPU submissions while
  // moving doors, flames, fabric and mist retain their own geometry.
  architecture.updateMatrixWorld(true);const buckets=new Map(),old=[];
- architecture.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);const key=o.material.uuid+(o.castShadow?'1':'0');if(!buckets.has(key))buckets.set(key,{material:o.material,cast:o.castShadow,p:[],n:[],uv:[]});const b=buckets.get(key);b.p.push(g.attributes.position.array);b.n.push(g.attributes.normal.array);b.uv.push(g.attributes.uv?g.attributes.uv.array:new Float32Array(g.attributes.position.count*2));old.push(o);g.dispose();});
+ architecture.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);if(o.material.userData.worldUV){const p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv,s=o.material.userData.worldUV;if(uv)for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));uv.setXY(i,(ny>nx&&ny>nz?p.getX(i):nx>nz?p.getZ(i):p.getX(i))*s,(ny>nx&&ny>nz?p.getZ(i):p.getY(i))*s);}}const key=o.material.uuid+(o.castShadow?'1':'0');if(!buckets.has(key))buckets.set(key,{material:o.material,cast:o.castShadow,p:[],n:[],uv:[]});const b=buckets.get(key);b.p.push(g.attributes.position.array);b.n.push(g.attributes.normal.array);b.uv.push(g.attributes.uv?g.attributes.uv.array:new Float32Array(g.attributes.position.count*2));old.push(o);g.dispose();});
  const concat=arrays=>{const a=new Float32Array(arrays.reduce((n,b)=>n+b.length,0));let at=0;for(const b of arrays){a.set(b,at);at+=b.length;}return a;};
  let staticTriangles=0;for(const b of buckets.values()){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(concat(b.p),3));g.setAttribute('normal',new T.BufferAttribute(concat(b.n),3));g.setAttribute('uv',new T.BufferAttribute(concat(b.uv),2));g.computeBoundingSphere();staticTriangles+=g.attributes.position.count/3;mesh(root,g,b.material,0,0,0,b.cast);}
  for(const o of old){o.parent.remove(o);o.geometry.dispose();}root.remove(architecture);

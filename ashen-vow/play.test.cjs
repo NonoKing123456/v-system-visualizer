@@ -52,6 +52,30 @@ test('fresh-run death retries its current run rather than an older saved checkpo
  q.startPublic(false);q.retry();assert.equal(q.flags.checkpoint,false);assert.equal(q.player.z,18);
 });
 
+test('a timed guard that fills posture produces the same stagger as a heavy hit',async()=>{
+ const q=await boot();q.startPublic();const enemy=q.enemies[0];
+ q.player.x=enemy.x;q.player.z=enemy.z+1.6;q.player.yaw=Math.PI;enemy.posture=60;
+ q.press('KeyL');q.updatePlayer(.01);q.damage(q.player,enemy,{damage:19,type:'sweep',poise:18});
+ assert.equal(q.player.hp,q.player.max);assert.equal(enemy.state,'stagger');assert.equal(enemy.posture,100);
+ q.release('KeyL');
+});
+
+test('contextual execution needs close stagger and damages only the selected enemy through its blade',async()=>{
+ const q=await boot();q.startPublic();const target=q.boss;
+ q.player.x=target.x;q.player.z=target.z+1.65;q.player.yaw=Math.PI;target.aggro=true;
+ q.tick(2);tap(q,'KeyF');q.tick(2);assert.equal(q.player.state,'idle');
+ q.change(target,'stagger');target.posture=100;q.tick(2);tap(q,'KeyF');q.tick(8);
+ assert.equal(q.player.attack.kind,'critical');assert.equal(target.hp,360);
+ q.tick(28);assert.equal(target.hp,260);assert.equal(target.posture,0);
+ assert.equal(q.enemies[0].hp,68);assert.equal(q.enemies[1].hp,68);
+});
+
+test('an exposed enemy outside execution distance cannot receive contextual damage',async()=>{
+ const q=await boot();q.startPublic();const target=q.boss;q.player.x=target.x;q.player.z=target.z+3;
+ target.aggro=true;q.change(target,'stagger');q.tick(2);tap(q,'KeyF');q.tick(45);
+ assert.equal(target.hp,360);assert.equal(q.player.stamina,100);
+});
+
 function tap(q,code){q.press(code);q.release(code);}
 function releaseMovement(q){for(const k of ['KeyW','KeyA','KeyS','KeyD'])q.release(k);}
 function moveToward(q,x,z){
